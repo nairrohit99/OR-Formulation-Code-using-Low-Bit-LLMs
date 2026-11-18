@@ -1,0 +1,12 @@
+torch>=2.3
+transformers>=4.45
+peft>=0.12
+accelerate>=0.33
+bitsandbytes>=0.43
+datasets>=2.20
+tqdm
+tensorboard
+pyomo>=6.7
+highspy>=1.7
+pytest
+# coptpy is only needed for step 0 (running the original OR-Instruct reference code)

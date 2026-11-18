@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+runs/
+results/
+data/*
+!data/nl4opt_test.jsonl
+.pytest_cache/
