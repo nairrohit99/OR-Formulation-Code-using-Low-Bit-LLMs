@@ -5,3 +5,4 @@ results/
 data/*
 !data/nl4opt_test.jsonl
 .pytest_cache/
+api_translate/cache/

@@ -1,0 +1,7 @@
+anthropic>=1.0        # Claude
+google-genai>=1.0     # Gemini
+pyomo>=6.7            # to run and verify Pyomo translations
+highspy>=1.7
+pulp==2.9.0           # only for --library pulp
+coptpy                # only for scripts/s00_reference_answers.py
+pytest

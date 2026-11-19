@@ -32,6 +32,7 @@ adapter. Training on files from two libraries at once is refused.
 | Step | Script | What it does | Hardware |
 |---|---|---|---|
 | 0 | `s00_reference_answers.py` | Runs the original **coptpy** code of OR-Instruct-3K to get each problem's true objective value (the dataset has no answer column) | CPU, needs `coptpy` |
+| 1 (alt) | `api_translate/translate.py` | Same as step 1, but with the **Claude or Gemini API** on a machine with internet (no GPU). Retries failed translations with solver feedback; responses are cached. See `api_translate/README.md` | CPU + internet |
 | 1 | `s01_translate.py` | A larger local LLM translates each coptpy program to **PuLP** (or Pyomo). A translation is kept **only if it reproduces the coptpy objective value**. Problems the translator marks as nonlinear are flagged `refused` and skipped | GPU |
 | 2 | `s02_sft.py` | QLoRA (nf4) or LoRA (bf16) SFT with fixed masking, plus a validation split | GPU |
 | 3 | `s03_sample.py` | Samples k answers per training problem, runs them, grades them against the reference, and optionally does one repair round | GPU + CPU |
@@ -91,6 +92,7 @@ B=../models/Qwen3-4B-Base                  # full-precision weights; nf4 is appl
 # 0-1: data
 python scripts/s00_reference_answers.py --or_instruct ../datasets/OR-Instruct-Data-3K
 python scripts/s01_translate.py --library pulp --translator ../models/Qwen3-32B --quant nf4 --rounds 4
+#   or, on a machine with internet: python api_translate/translate.py --provider claude --library pyomo
 python scripts/check_overlap.py --train data/pulp/or_instruct.jsonl --bench nl4opt=data/nl4opt_test.jsonl
 
 # 2: SFT (4-bit and bf16)
