@@ -9,8 +9,9 @@ from orlb.pipeline import score_records, solve_items  # noqa: E402
 from test_core import DUCKS  # noqa: E402
 
 GOOD = "## Mathematical Model:\n- x\n\n```python\n" + DUCKS + "```"
-WRONG = GOOD.replace("20*model.boat", "25*model.boat")       # runs, wrong objective value
-CRASH = GOOD.replace("model.obj = ", "model.obj = undefined_name + ")
+WRONG = GOOD.replace("20*boat", "25*boat")                   # runs, wrong objective value
+CRASH = GOOD.replace("model += 20*boat", "model += undefined_name + 20*boat")
+assert GOOD != WRONG and GOOD != CRASH
 
 
 class FakeGen:

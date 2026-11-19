@@ -6,7 +6,8 @@ bitsandbytes>=0.43
 datasets>=2.20
 tqdm
 tensorboard
-pyomo>=6.7
-highspy>=1.7
+pulp==2.9.0          # default library; 4.x removed the classic API
+pyomo>=6.7           # only for --library pyomo
+highspy>=1.7         # only for --library pyomo
 pytest
 # coptpy is only needed for step 0 (running the original OR-Instruct reference code)

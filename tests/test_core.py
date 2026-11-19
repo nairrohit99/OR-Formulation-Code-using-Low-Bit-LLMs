@@ -1,16 +1,35 @@
-"""CPU unit tests: code extraction, execution, parsing, grading, voting. Needs pyomo + highspy.
-Run: python -m pytest -q tests
+"""CPU unit tests: code extraction, execution, parsing, grading, voting.
+Needs pulp==2.9.0, pyomo and highspy.  Run: python -m pytest -q tests
 """
 import os
 import sys
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from orlb.data import build_completion, extract_question, math_part, split_of  # noqa: E402
 from orlb.execution import extract_code, parse_output, run_code  # noqa: E402
 from orlb.grading import NO_SOL, majority_vote, match, mcnemar_exact, parse_gt, wilson_ci  # noqa: E402
-from orlb.prompts import PYOMO_SOLVE_SNIPPET  # noqa: E402
+from orlb.prompts import LIBRARIES, PULP, PYOMO, check_library, task_prompt, translate_prompt  # noqa: E402
 
-DUCKS = """import pyomo.environ as pyo
+DUCKS_PULP = """import pulp
+model = pulp.LpProblem("ducks", pulp.LpMinimize)
+boat = pulp.LpVariable("boat", lowBound=0, cat="Integer")
+canoe = pulp.LpVariable("canoe", lowBound=0, cat="Integer")
+model += 20*boat + 40*canoe
+model += 10*boat + 8*canoe >= 300, "ducks"
+model += boat <= 12, "max_boat"
+model += canoe >= 0.6*(boat + canoe), "canoe_share"
+""" + PULP.solve_snippet + "\n"
+
+INFEASIBLE_PULP = """import pulp
+model = pulp.LpProblem("inf", pulp.LpMinimize)
+x = pulp.LpVariable("x", lowBound=0)
+model += x
+model += x <= -1
+""" + PULP.solve_snippet + "\n"
+
+DUCKS_PYOMO = """import pyomo.environ as pyo
 model = pyo.ConcreteModel()
 model.boat = pyo.Var(domain=pyo.NonNegativeIntegers)
 model.canoe = pyo.Var(domain=pyo.NonNegativeIntegers)
@@ -18,25 +37,56 @@ model.obj = pyo.Objective(expr=20*model.boat + 40*model.canoe, sense=pyo.minimiz
 model.ducks = pyo.Constraint(expr=10*model.boat + 8*model.canoe >= 300)
 model.maxboat = pyo.Constraint(expr=model.boat <= 12)
 model.canoe_share = pyo.Constraint(expr=model.canoe >= 0.6*(model.boat + model.canoe))
-""" + PYOMO_SOLVE_SNIPPET + "\n"
+""" + PYOMO.solve_snippet + "\n"
 
-INFEASIBLE = """import pyomo.environ as pyo
+INFEASIBLE_PYOMO = """import pyomo.environ as pyo
 model = pyo.ConcreteModel()
 model.x = pyo.Var(domain=pyo.NonNegativeReals)
 model.obj = pyo.Objective(expr=model.x)
 model.c = pyo.Constraint(expr=model.x <= -1)
-""" + PYOMO_SOLVE_SNIPPET + "\n"
+""" + PYOMO.solve_snippet + "\n"
+
+DUCKS = DUCKS_PULP  # default library
+PROGRAMS = {"pulp": (DUCKS_PULP, INFEASIBLE_PULP), "pyomo": (DUCKS_PYOMO, INFEASIBLE_PYOMO)}
 
 
-def test_pyomo_snippet_optimal():
-    r = run_code(DUCKS, timeout=60)
-    assert r.status == "ok", (r.status, r.stderr)
+@pytest.mark.parametrize("library", sorted(LIBRARIES))
+def test_library_available(library):
+    check_library(library)
+
+
+@pytest.mark.parametrize("library", sorted(LIBRARIES))
+def test_snippet_optimal(library):
+    r = run_code(PROGRAMS[library][0], timeout=60)
+    assert r.status == "ok", (r.status, r.stdout, r.stderr)
     assert abs(r.objective - 1160) < 1e-6 and r.parse_mode == "marker"
+    assert all(m in PROGRAMS[library][0] for m in LIBRARIES[library].required_markers)
 
 
-def test_pyomo_snippet_infeasible():
-    r = run_code(INFEASIBLE, timeout=60)
+@pytest.mark.parametrize("library", sorted(LIBRARIES))
+def test_snippet_infeasible(library):
+    r = run_code(PROGRAMS[library][1], timeout=60)
     assert r.status == "infeasible", (r.status, r.stdout, r.stderr)
+
+
+def test_pulp_unbounded():
+    code = """import pulp
+model = pulp.LpProblem("unb", pulp.LpMaximize)
+w = pulp.LpVariable("w", lowBound=0)
+model += w
+model += w >= 1
+""" + PULP.solve_snippet
+    assert run_code(code).status == "unbounded"
+
+
+def test_prompts_name_library():
+    for lib in LIBRARIES:
+        assert f"using `{lib}`" in task_prompt("Q?", lib)
+        t = translate_prompt("Q?", "import coptpy", lib)
+        assert LIBRARIES[lib].solve_snippet in t and "import coptpy" in t
+    assert "NOT_LINEAR" in translate_prompt("Q?", "x", "pulp")
+    with pytest.raises(ValueError):
+        task_prompt("Q?", "gurobi")
 
 
 def test_errors():
@@ -88,8 +138,9 @@ def test_data_helpers():
               "using `coptpy` that appropriately addresses the question.\n\n# Question:\nA farm grows wheat.\n\n# Response:\n")
     assert extract_question(prompt) == "A farm grows wheat."
     comp = "## Mathematical Model:\n### Decision Variables\n- x\n\n## Python Code Solution Using `coptpy`:\n```python\nimport coptpy\n```"
-    mp = math_part(comp)
-    assert "coptpy" not in mp and mp.startswith("## Mathematical Model:") and "```" not in mp
-    full = build_completion(mp, "print(1)")
-    assert extract_code(full).strip() == "print(1)" and "`pyomo`" in full
+    for lib in LIBRARIES:
+        mp = math_part(comp, lib)
+        assert "coptpy" not in mp and mp.startswith("## Mathematical Model:") and "```" not in mp
+        full = build_completion(mp, "print(1)", lib)
+        assert extract_code(full).strip() == "print(1)" and f"Using `{lib}`" in full
     assert split_of("a", 0.0) == "train" and split_of("a", 1.0) == "val"

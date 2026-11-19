@@ -1,7 +1,7 @@
 """Contamination check: word n-gram overlap between training questions and benchmark questions.
 Reviewers will ask; report the number of near-duplicates (and optionally exclude them).
 
-python scripts/check_overlap.py --train data/or_instruct_pyomo.jsonl --bench nl4opt=data/nl4opt_test.jsonl
+python scripts/check_overlap.py --train data/pulp/or_instruct.jsonl --bench nl4opt=data/nl4opt_test.jsonl
 """
 import argparse
 import os

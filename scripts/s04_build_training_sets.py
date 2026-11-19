@@ -2,8 +2,8 @@
   * an RFT set   (self-generated answers that the solver confirmed correct), and
   * a DPO set    (chosen = correct answer, rejected = wrong/crashing answer, same prompt).
 
-python scripts/s04_build_training_sets.py --samples data/samples_sft_nf4.jsonl \
-    --rft_out data/rft_nf4.jsonl --dpo_out data/dpo_nf4.jsonl
+python scripts/s04_build_training_sets.py --samples data/pulp/samples_sft_nf4.jsonl \
+    --rft_out data/pulp/rft_nf4.jsonl --dpo_out data/pulp/dpo_nf4.jsonl
 """
 import argparse
 import os
@@ -26,14 +26,14 @@ def norm_code(resp):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--samples", nargs="+", required=True)
-    ap.add_argument("--rft_out", default="data/rft.jsonl")
-    ap.add_argument("--dpo_out", default="data/dpo.jsonl")
+    ap.add_argument("--rft_out", default="data/pulp/rft.jsonl")
+    ap.add_argument("--dpo_out", default="data/pulp/dpo.jsonl")
     ap.add_argument("--max_rft_per_problem", type=int, default=4)
     ap.add_argument("--max_pairs_per_problem", type=int, default=2)
     ap.add_argument("--include_repairs", action="store_true",
                     help="add successful repair attempts (repair prompt -> fixed answer) to the RFT set")
     ap.add_argument("--gold_chosen", action="store_true",
-                    help="when no sample is correct, use the verified gold Pyomo answer as `chosen`")
+                    help="when no sample is correct, use the verified gold (translated) answer as `chosen`")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     rng = random.Random(args.seed)

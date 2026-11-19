@@ -37,13 +37,13 @@ def main():
 
     sep = " & " if args.latex else " | "
     end = r" \\" if args.latex else " |"
-    head = ["run", "quant", "k", "rep"] + benches + ["tok/prob", "s/prob", "peak GB"]
+    head = ["run", "lib", "quant", "k", "rep"] + benches + ["tok/prob", "s/prob", "peak GB"]
     print(("" if args.latex else "| ") + sep.join(head) + end)
     if not args.latex:
         print("|" + "---|" * len(head))
     for run, s in data.items():
         c = s["config"]
-        cells = [os.path.basename(run), c["quant"], str(c["n"]), str(c["repair_rounds"])]
+        cells = [os.path.basename(run), c.get("library", "pyomo"), c["quant"], str(c["n"]), str(c["repair_rounds"])]
         toks, secs, mem = [], [], []
         for b in benches:
             if b not in s["benchmarks"]:

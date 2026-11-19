@@ -2,7 +2,7 @@
 The reference policy is the starting adapter; its log-probs are pre-computed once.
 
 python scripts/s05_dpo.py --base ../models/Qwen3-4B-Base --quant nf4 --adapter runs/rft_nf4/final \
-    --pairs data/dpo_nf4.jsonl --out runs/dpo_nf4
+    --pairs data/pulp/dpo_nf4.jsonl --out runs/dpo_nf4
 """
 import argparse
 import os

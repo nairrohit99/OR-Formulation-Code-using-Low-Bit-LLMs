@@ -1,7 +1,7 @@
 """Run this on a machine WITH internet, then copy the folders to the offline A100 machine.
 
 python scripts/download_assets.py --models_dir ../models --datasets_dir ../datasets
-Also run:  pip download pyomo highspy -d ../wheels   (then: pip install --no-index --find-links ../wheels pyomo highspy)
+Also run:  pip download -r requirements.txt -d ../wheels   (then offline: pip install --no-index --find-links ../wheels -r requirements.txt)
 """
 import argparse
 import os
@@ -10,7 +10,7 @@ MODELS = [
     "Qwen/Qwen3-4B-Base",            # main model (quantised on the fly -> same weights for nf4 and bf16)
     "Qwen/Qwen3-8B-Base",            # bigger full-precision comparison (budget-matched experiment)
     "Qwen/Qwen3-1.7B-Base",          # optional: size axis
-    "Qwen/Qwen3-32B",                # translator for coptpy -> pyomo (run in nf4); gpt-oss-20b also works
+    "Qwen/Qwen3-32B",                # translator for coptpy -> PuLP / Pyomo (run in nf4); gpt-oss-20b also works
 ]
 DATASETS = [
     "CardinalOperations/OR-Instruct-Data-3K",

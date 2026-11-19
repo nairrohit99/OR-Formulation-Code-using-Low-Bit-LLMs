@@ -8,7 +8,7 @@ import re
 from typing import Iterable, Optional
 
 from .execution import extract_code
-from .prompts import CODE_HEADER
+from .prompts import DEFAULT_LIBRARY, code_header
 
 Q_KEYS = ["question", "en_question", "Question", "problem", "description", "prompt"]
 A_KEYS = ["answer", "en_answer", "Answer", "optimal_value", "ground_truth", "objective"]
@@ -104,7 +104,7 @@ def extract_question(prompt: str) -> str:
 _PY_HEADER = re.compile(r"\n?#+\s*Python Code.*", re.S | re.I)
 
 
-def math_part(completion: str) -> str:
+def math_part(completion: str, library: str = DEFAULT_LIBRARY) -> str:
     """Everything before the code section (the mathematical model write-up)."""
     text = completion or ""
     m = _PY_HEADER.search(text)
@@ -112,12 +112,12 @@ def math_part(completion: str) -> str:
         text = text[: m.start()]
     elif "```" in text:
         text = text[: text.index("```")]
-    text = re.sub(r"`?coptpy`?|COPT", "pyomo", text)
+    text = re.sub(r"`?coptpy`?|COPT", library, text)
     return text.rstrip()
 
 
-def build_completion(math_text: str, code: str) -> str:
-    return f"{math_text.rstrip()}\n\n{CODE_HEADER}\n```python\n{code.strip()}\n```"
+def build_completion(math_text: str, code: str, library: str = DEFAULT_LIBRARY) -> str:
+    return f"{math_text.rstrip()}\n\n{code_header(library)}\n```python\n{code.strip()}\n```"
 
 
 def split_of(key: str, val_frac: float, seed: int = 0) -> str:
